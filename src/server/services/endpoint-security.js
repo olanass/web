@@ -53,11 +53,30 @@ async function resolvePublicEndpoint(value) {
   return { endpoint, addresses };
 }
 
+// A dot segment, percent-encoded or not. Assigning to URL.pathname runs the WHATWG path parser,
+// which resolves these, and the parser treats %2e as a dot -- so a suffix of `%2e%2e/admin`
+// escapes the path the creator registered. Routers and CDNs do not normalise %2e away, so the
+// suffix arrives here intact.
+const DOT_SEGMENT = /(?:^|\/)(?:\.|%2e){1,2}(?:\/|$)/i;
+
 function joinEndpoint(baseUrl, suffix, search) {
+  const base = new URL(baseUrl);
   const target = new URL(baseUrl);
   const cleanSuffix = String(suffix || '').replace(/^\/+/, '');
+  if (DOT_SEGMENT.test(cleanSuffix)) throw Object.assign(new Error('Path traversal is not allowed'), { status: 400 });
   if (cleanSuffix) target.pathname = target.pathname.replace(/\/+$/, '') + '/' + cleanSuffix;
-  if (search) target.search = search.startsWith('?') ? search : `?${search}`;
+  // Belt and braces: whatever the parser made of it, the result still has to be inside the
+  // registered endpoint.
+  if (target.origin !== base.origin || !target.pathname.startsWith(base.pathname.replace(/\/+$/, ''))) {
+    throw Object.assign(new Error('Path traversal is not allowed'), { status: 400 });
+  }
+  // The caller's query is merged into the creator's, not substituted for it: a registered
+  // endpoint may carry parameters of its own, and dropping them silently breaks the listing.
+  if (search) {
+    for (const [key, value] of new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)) {
+      target.searchParams.append(key, value);
+    }
+  }
   return target;
 }
 
