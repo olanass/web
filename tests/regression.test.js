@@ -22,6 +22,7 @@ const { verifyPayment, claimMessage, EIP712_DOMAIN, EIP712_TYPES } = require('..
 const { settlePayment } = require('../src/server/facilitator/settler');
 const vault = require('../src/server/vault/storage');
 const app = require('../src/server/app');
+const { joinEndpoint } = require('../src/server/services/endpoint-security');
 const { serviceCreationMessage, managementMessage } = require('../src/server/services/routes');
 const { serviceStore } = require('../src/server/services/store');
 const { isPrivateAddress } = require('../src/server/services/endpoint-security');
@@ -261,6 +262,24 @@ test('paywall: multipart upload round trips binary bytes', async () => {
   const download = await fetch(base + '/api/paywalls/' + paywall.paywallId + '/download', { headers: { 'PAYMENT-SIGNATURE': Buffer.from(JSON.stringify(proof)).toString('base64') } });
   assert.equal(download.status, 200); assert.deepEqual(Buffer.from(await download.arrayBuffer()), bytes);
 });
+// joinEndpoint is what keeps a proxied request inside the path a creator registered. Assigning to
+// URL.pathname resolves dot segments, and the WHATWG parser treats %2e as a dot, which routers and
+// CDNs do not normalise away -- so the encoded form is the one that matters here.
+test('services: a request suffix cannot escape the registered endpoint path', () => {
+  const base = 'https://api.example.com/tenant/abc/';
+  assert.equal(joinEndpoint(base, 'quote', '').href, 'https://api.example.com/tenant/abc/quote');
+  for (const suffix of ['../../admin', '%2e%2e/%2e%2e/admin', '%2E%2E/admin', '.%2e/admin', 'a/../../admin']) {
+    assert.throws(() => joinEndpoint(base, suffix, ''), /traversal/i, `suffix escaped: ${suffix}`);
+  }
+});
+
+// A registered endpoint may carry parameters of its own; a caller's query is added to them.
+test('services: a caller query does not replace the endpoint query', () => {
+  const joined = joinEndpoint('https://api.example.com/v1?key=abc', 'quote', '?city=Delhi');
+  assert.equal(joined.searchParams.get('key'), 'abc');
+  assert.equal(joined.searchParams.get('city'), 'Delhi');
+});
+
 test('services: signed launch, private metadata, paid proxy and analytics', async () => {
   let flakyCalls = 0;
   const upstream = require('http').createServer((req, res) => {
