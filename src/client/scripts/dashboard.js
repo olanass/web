@@ -124,8 +124,12 @@ function initDocsPortal() {
 }
 
 
+// Escapes quotes as well as angle brackets, so the result is safe in an attribute and not only
+// in element content. Every current call site is element content; this keeps it true if one moves.
+const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
 function escapeHtml(value) {
-  const el = document.createElement('span'); el.textContent = String(value ?? ''); return el.innerHTML;
+  return String(value ?? '').replace(/[&<>"']/g, character => HTML_ESCAPES[character]);
 }
 function decimalUnits(value, decimals) {
   if (!/^\d+(\.\d+)?$/.test(value)) throw new Error('Invalid price');
