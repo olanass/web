@@ -15,6 +15,20 @@ const { publicRouter: serviceRouter, gatewayRouter: serviceGatewayRouter, discov
 
 function createApp({ serveClient = true } = {}) {
 const app = express();
+// Behind Vercel's TLS terminator req.protocol is 'http' unless the proxy is trusted, and that
+// value is what baseUrl() and the 402 challenge's resource.url are built from. The API was
+// handing out http:// links to its own HTTPS endpoints -- which the project's own MCP client
+// refuses, since it requires an HTTPS launchpad origin.
+app.set('trust proxy', 1);
+
+// This origin runs the wallet connection and builds the transactions people sign, so it should
+// not be framable, and a response should not be sniffed into a different type than it claims.
+app.use((req, res, next) => {
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('X-Frame-Options', 'DENY');
+  res.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
 app.get('/api/version', (req, res) => res.set('Cache-Control', 'no-store').json({
   application: 'x402-launchpad',
   repository: 'olanass/launchpad-app',
