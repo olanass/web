@@ -271,6 +271,10 @@ test('services: signed launch, private metadata, paid proxy and analytics', asyn
         res.statusCode = 503;
         return res.end(JSON.stringify({ error: 'temporary failure' }));
       }
+      if (req.url.includes('/always-fails')) {
+        res.statusCode = 404;
+        return res.end(JSON.stringify({ error: 'no such thing' }));
+      }
       res.setHeader('content-type', 'application/json');
       res.end(JSON.stringify({ method: req.method, url: req.url, body: Buffer.concat(chunks).toString() }));
     });
@@ -369,6 +373,19 @@ test('services: signed launch, private metadata, paid proxy and analytics', asyn
     const creatorList = await fetch(base + '/api/services/creator/' + creator.address).then(result => result.json());
     assert.equal(creatorList.services.some(item => item.serviceId === service.serviceId), true);
     assert.ok(!JSON.stringify(creatorList).includes('creatorSignature'));
+
+    // A payment whose upstream keeps failing may be retried, but not without end: otherwise one
+    // payment buys unlimited proxied calls against the creator's origin.
+    const failingProof = {
+      scheme: 'sandbox', payer: payer.address, recipient: creator.address,
+      amount: '0.002', token: 'USDC', chainId: config.chainId, nonce: crypto.randomUUID()
+    };
+    const failingHeaders = { 'payment-signature': Buffer.from(JSON.stringify(failingProof)).toString('base64') };
+    const statuses = [];
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      statuses.push((await fetch(`${base}/x402/${service.slug}/always-fails`, { method: 'POST', headers: failingHeaders })).status);
+    }
+    assert.deepEqual(statuses, [404, 404, 404, 409, 409]);
 
     const changes = { status: 'paused' };
     const creatorTimestamp = String(Date.now());

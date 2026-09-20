@@ -6,6 +6,13 @@ const { DATA_DIR } = require('../config/paths');
 const { ROBINHOOD_CHAIN_CONFIG: chain } = require('../config/chain');
 const { parseAmount } = require('../facilitator/amount');
 
+// A payment whose upstream call failed may be retried, so a bad minute at the origin does not
+// cost the buyer their money. Without a ceiling that allowance is unbounded: an upstream that
+// answers 4xx to a malformed request -- an unknown identifier, say -- hands back a fresh attempt
+// every time, and the body is relayed on each one, so a single payment buys unlimited proxied
+// calls against the creator's origin. The attempts column was already being counted; this reads it.
+const MAX_RECEIPT_ATTEMPTS = 3;
+
 function slugify(value) {
   return String(value || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'service';
 }
@@ -175,8 +182,8 @@ class ServiceStore {
     const c = await this.init();
     const now = new Date().toISOString();
     const result = await c.execute({
-      sql: 'INSERT INTO service_receipts(receipt_id, service_id, state, attempts, updated_at) VALUES (?, ?, ?, 1, ?) ON CONFLICT(receipt_id) DO UPDATE SET state = ?, attempts = attempts + 1, updated_at = excluded.updated_at WHERE state = ? AND service_id = ?',
-      args: [receiptId, serviceId, 'pending', now, 'pending', 'failed', serviceId]
+      sql: 'INSERT INTO service_receipts(receipt_id, service_id, state, attempts, updated_at) VALUES (?, ?, ?, 1, ?) ON CONFLICT(receipt_id) DO UPDATE SET state = ?, attempts = attempts + 1, updated_at = excluded.updated_at WHERE state = ? AND service_id = ? AND attempts < ?',
+      args: [receiptId, serviceId, 'pending', now, 'pending', 'failed', serviceId, MAX_RECEIPT_ATTEMPTS]
     });
     return result.rowsAffected === 1;
   }
