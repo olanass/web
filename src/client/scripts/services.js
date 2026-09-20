@@ -3,10 +3,13 @@ const serviceUiState = {
   logoDataUrl: '', logoHash: '', openapiDocument: null, openapiHash: ''
 };
 
+// Serialising a text node escapes &, < and >, but not quotes: the browser only escapes those
+// when it serialises an attribute. This value is interpolated into attributes as well as into
+// element content, so the quotes have to be escaped here.
+const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
 function escapeServiceHtml(value) {
-  const element = document.createElement('span');
-  element.textContent = String(value ?? '');
-  return element.innerHTML;
+  return String(value ?? '').replace(/[&<>"']/g, character => HTML_ESCAPES[character]);
 }
 
 function shortNumber(value) {

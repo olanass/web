@@ -449,6 +449,25 @@ function browserFixture(provider, fetchImpl) {
   }
   return { context, elements, document, saved };
 }
+// Service names are supplied by whoever lists the service and are interpolated into attributes
+// (the logo's alt text) as well as into element content, so the escaper has to be safe in both.
+function loadClientScript(name) {
+  const context = vm.createContext({ document: { createElement: () => ({}) }, window: {}, console });
+  vm.runInContext(fs.readFileSync(path.join(projectRoot, 'src', 'client', 'scripts', `${name}.js`), 'utf8'), context, { filename: `${name}.js` });
+  return context;
+}
+
+test('browser: escaped service text cannot break out of an attribute', () => {
+  for (const script of ['services', 'dashboard']) {
+    const context = loadClientScript(script);
+    const escape = script === 'services' ? 'escapeServiceHtml' : 'escapeHtml';
+    const escaped = vm.runInContext(`${escape}('a" onload="alert(1)" x=\\'y')`, context);
+    assert.ok(!escaped.includes('"'), `${script}: a double quote survived escaping`);
+    assert.ok(!escaped.includes("'"), `${script}: a single quote survived escaping`);
+    assert.equal(vm.runInContext(`${escape}('<b>&</b>')`, context), '&lt;b&gt;&amp;&lt;/b&gt;');
+  }
+});
+
 test('browser: rejecting a creator signature never publishes a file', async () => {
   let posted = false;
   const browser = browserFixture({ request: async ({ method }) => {
