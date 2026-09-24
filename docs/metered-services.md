@@ -1,6 +1,6 @@
 # Independent metered services
 
-Metered inference is deployed separately in `olanass/olanas-inference`. Do not merge the embedded Orbio gateway branch into this launchpad to publish it.
+Metered inference is deployed separately in `olanass/orbio-inference`. Do not merge the embedded Orbio gateway branch into this launchpad to publish it.
 
 A creator-signed listing can use `billingMode: "metered"`, `price: null`, `currency: "USDG"`, `allowedMethods: ["POST"]`, and an HTTPS endpoint ending exactly in `/api/inference/escrow/chat/completions`. The billing mode is included in the signed creation payload. Existing fixed-price signatures keep their original format.
 
