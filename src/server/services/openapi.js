@@ -43,7 +43,8 @@ function publicOpenApi(service, gatewayUrl) {
   const document = JSON.parse(JSON.stringify(service.openapiDocument));
   document.servers = [{ url: gatewayUrl }];
   document['x-olanas-payment'] = {
-    scheme: 'onchain-tx',
+    scheme: service.billingMode === 'metered' ? 'batch-settlement' : 'onchain-tx',
+    billingMode: service.billingMode || 'fixed',
     network: service.network,
     chainId: service.chainId,
     price: service.price,

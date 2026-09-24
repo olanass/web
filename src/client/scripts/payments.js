@@ -234,6 +234,7 @@ async function loadPaymentServices() {
     const networks = await networkResponse.json();
     if (!serviceResponse.ok || !services.services) throw new Error(services.error || 'Could not load live APIs');
     if (!networkResponse.ok || !networks.networks?.[0]) throw new Error(networks.error || 'Could not load the payment network');
+    services.services = services.services.filter(service => service.billingMode !== 'metered');
     paymentConsoleState.services = services.services;
     paymentConsoleState.network = networks.networks[0];
     const select = document.getElementById('paymentService');

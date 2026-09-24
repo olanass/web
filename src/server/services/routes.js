@@ -7,6 +7,7 @@ const { x402 } = require('../middleware/x402');
 const { serviceStore, publicService, serviceLogo } = require('./store');
 const { parseEndpointUrl, resolvePublicEndpoint, joinEndpoint, proxyRequest } = require('./endpoint-security');
 const { validateOpenApi, publicOpenApi, inputSchema } = require('./openapi');
+const { validateMetered, meteredDetails } = require('./metered');
 
 const publicRouter = express.Router();
 const gatewayRouter = express.Router();
@@ -45,6 +46,14 @@ async function discoveryHandler(req, res, next) {
     const offset = Math.max(Number.parseInt(req.query.offset, 10) || 0, 0);
     const result = await serviceStore.list({ status: 'live', limit, offset });
     const items = result.services.map(service => {
+      const metered = meteredDetails(service);
+      if (metered) return {
+        resource: service.endpointUrl, type: 'http', x402Version: 2, accepts: [],
+        metadata: { name: service.name, description: service.description, methods: service.allowedMethods,
+          billingMode: 'metered', metered, input: inputSchema(service),
+          paymentInstructions: 'Request a model-specific HTTP 402 quote from the service. Verify the receiver against the creator-signed payout address.',
+          payTo: service.payoutAddress }, lastUpdated: service.updatedAt
+      };
       const token = chain.supportedTokens[service.currency];
       return {
         resource: `${baseUrl(req)}/x402/${service.slug}`, type: 'http', x402Version: 2,
@@ -72,6 +81,7 @@ function creationPayload(input) {
     logoHash: input.logoHash || '', openapiHash: input.openapiHash || '',
     endpointUrl: input.endpointUrl, allowedMethods: input.allowedMethods,
     price: input.price, currency: input.currency,
+    ...(input.billingMode === 'metered' ? { billingMode: 'metered' } : {}),
     creatorAddress: input.creatorAddress.toLowerCase(), payoutAddress: input.payoutAddress.toLowerCase(),
     network: chain.networkId, chainId: chain.chainId, timestamp: input.creatorTimestamp
   };
@@ -118,12 +128,15 @@ function validateCreation(body) {
   if (description.length > 2000 || !category || category.length > 80) throw Object.assign(new Error('Description or category is too long'), { status: 400 });
   if (!allowedMethods.length || allowedMethods.some(method => !ALLOWED_METHODS.has(method))) throw Object.assign(new Error('Choose at least one supported HTTP method'), { status: 400 });
   if (body.network && body.network !== chain.networkId) throw Object.assign(new Error(`Network must be ${chain.networkId}`), { status: 400 });
-  parseAmount(body.price, currency);
+  const metered = validateMetered(body, endpointUrl);
+  if (!metered) parseAmount(body.price, currency);
+  if (metered && (allowedMethods.length !== 1 || allowedMethods[0] !== 'POST')) throw Object.assign(new Error('Metered inference requires POST'), { status: 400 });
   if (!ethers.isAddress(creatorAddress) || !ethers.isAddress(payoutAddress)) throw Object.assign(new Error('Valid creator and payout addresses are required'), { status: 400 });
   if (!/^\d{13}$/.test(creatorTimestamp || '') || Math.abs(Date.now() - Number(creatorTimestamp)) > 300000) throw Object.assign(new Error('Creator signature expired'), { status: 400 });
   return {
     name, description, category, videoUrl, logo, logoHash, openapiDocument, openapiHash, endpointUrl, allowedMethods,
-    price: body.price, currency, creatorAddress, payoutAddress,
+    price: metered ? null : body.price, currency, creatorAddress, payoutAddress,
+    ...(metered ? { billingMode: 'metered' } : {}),
     creatorTimestamp, creatorSignature: body.creatorSignature
   };
 }
@@ -184,7 +197,7 @@ publicRouter.get('/:slug/openapi.json', async (req, res, next) => {
     const service = await serviceStore.getBySlug(req.params.slug);
     if (!service || !service.openapiDocument) return res.status(404).json({ error: 'OpenAPI document not found' });
     res.set('Cache-Control', 'public, max-age=300');
-    return res.json(publicOpenApi(service, `${baseUrl(req)}/x402/${encodeURIComponent(service.slug)}`));
+    return res.json(publicOpenApi(service, service.billingMode === 'metered' ? service.endpointUrl : `${baseUrl(req)}/x402/${encodeURIComponent(service.slug)}`));
   } catch (error) { return next(error); }
 });
 
@@ -230,12 +243,17 @@ publicRouter.patch('/:slug', async (req, res, next) => {
       changes.status = String(requested.status);
       if (!['live', 'paused'].includes(changes.status)) throw Object.assign(new Error('Status must be live or paused'), { status: 400 });
     }
-    if (requested.price != null) { parseAmount(String(requested.price), service.currency); changes.price = String(requested.price); }
+    if (requested.price != null) {
+      if (service.billingMode === 'metered') throw Object.assign(new Error('Metered services do not have a fixed price'), { status: 400 });
+      parseAmount(String(requested.price), service.currency); changes.price = String(requested.price);
+    }
     if (requested.endpointUrl != null) {
       changes.endpointUrl = parseEndpointUrl(requested.endpointUrl).toString();
+      if (service.billingMode === 'metered') validateMetered({ ...service, price: null }, changes.endpointUrl);
       await resolvePublicEndpoint(changes.endpointUrl);
     }
     if (requested.allowedMethods != null) {
+      if (service.billingMode === 'metered' && JSON.stringify(requested.allowedMethods) !== '["POST"]') throw Object.assign(new Error('Metered inference requires POST'), { status: 400 });
       changes.allowedMethods = [...new Set(requested.allowedMethods.map(value => String(value).toUpperCase()))].sort();
       if (!changes.allowedMethods.length || changes.allowedMethods.some(method => !ALLOWED_METHODS.has(method))) throw Object.assign(new Error('Invalid methods'), { status: 400 });
     }
@@ -299,6 +317,7 @@ gatewayRouter.use('/:slug', async (req, res, next) => {
   try { service = await serviceStore.getBySlug(req.params.slug); } catch (error) { return next(error); }
   if (!service) return res.status(404).json({ error: 'Service not found' });
   if (service.status !== 'live') return res.status(503).json({ error: 'Service is not live' });
+  if (service.billingMode === 'metered') return res.status(409).json({ error: 'Use the independent metered service with an x402 batch-settlement client', metered: meteredDetails(service) });
   if (!service.allowedMethods.includes(req.method)) return res.status(405).set('Allow', service.allowedMethods.join(', ')).json({ error: 'Method not allowed' });
   return x402({
     price: service.price, token: service.currency, recipient: service.payoutAddress,

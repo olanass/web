@@ -6,6 +6,7 @@ const { DATA_DIR } = require('../config/paths');
 const { ROBINHOOD_CHAIN_CONFIG: chain } = require('../config/chain');
 const { parseAmount } = require('../facilitator/amount');
 const { inputSchema } = require('./openapi');
+const { meteredDetails } = require('./metered');
 
 function slugify(value) {
   return String(value || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'service';
@@ -34,14 +35,16 @@ function publicService(service, baseUrl) {
     category: service.category, videoUrl: service.videoUrl || null,
     logoUrl: service.logo ? `${baseUrl ? baseUrl.replace(/\/$/, '') : ''}/api/services/${encodeURIComponent(service.slug)}/logo` : null,
     allowedMethods: service.allowedMethods, input: inputSchema(service), price: service.price, currency: service.currency,
+    billingMode: service.billingMode || 'fixed', metered: meteredDetails(service),
     network: service.network, chainId: service.chainId, creatorAddress: service.creatorAddress,
-    payoutAddress: service.payoutAddress, status: service.status, requests: service.paidRequests,
-    revenue: service.totalEarned, revenueUsd: ['USDC', 'USDG'].includes(service.currency) ? Number(service.totalEarned) : null,
+    payoutAddress: service.payoutAddress, status: service.status, requests: service.billingMode === 'metered' ? null : service.paidRequests,
+    revenue: service.billingMode === 'metered' ? null : service.totalEarned,
+    revenueUsd: service.billingMode !== 'metered' && ['USDC', 'USDG'].includes(service.currency) ? Number(service.totalEarned) : null,
     successfulResponses: service.successfulResponses, failedResponses: service.failedResponses,
     lastRequestAt: service.lastRequestAt, lastSuccessAt: service.lastSuccessAt,
     createdAt: service.createdAt, updatedAt: service.updatedAt, gatewayPath,
     openapiUrl: service.openapiDocument ? (baseUrl ? baseUrl.replace(/\/$/, '') : '') + openapiPath : null,
-    gatewayUrl: baseUrl ? baseUrl.replace(/\/$/, '') + gatewayPath : gatewayPath
+    gatewayUrl: service.billingMode === 'metered' ? service.endpointUrl : (baseUrl ? baseUrl.replace(/\/$/, '') + gatewayPath : gatewayPath)
   };
 }
 
@@ -113,6 +116,7 @@ class ServiceStore {
       videoUrl: input.videoUrl || '', logo, endpointUrl: input.endpointUrl,
       openapiDocument: input.openapiDocument || null, openapiHash: input.openapiHash || '',
       allowedMethods: input.allowedMethods, price: input.price, currency: input.currency,
+      billingMode: input.billingMode || 'fixed',
       network: chain.networkId, chainId: chain.chainId,
       creatorAddress: ethers.getAddress(input.creatorAddress.toLowerCase()), payoutAddress: ethers.getAddress(input.payoutAddress.toLowerCase()),
       creatorSignature: input.creatorSignature, status: 'live', paidRequests: 0, successfulResponses: 0,

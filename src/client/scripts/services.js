@@ -45,6 +45,10 @@ function initServiceLaunchpad() {
   document.getElementById('btnCopyCurl')?.addEventListener('click', event => copyServiceText(document.getElementById('detailCurl').textContent, event.currentTarget));
   document.getElementById('btnCopyAgentCode')?.addEventListener('click', event => copyServiceText(document.getElementById('detailAgentCode').textContent, event.currentTarget));
   document.getElementById('btnRunService')?.addEventListener('click', () => {
+    if (serviceUiState.currentService?.billingMode === 'metered') {
+      document.getElementById('detailAgentCode')?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
     const slug = serviceUiState.currentService?.slug;
     history.pushState(null, '', slug ? `/payments?service=${encodeURIComponent(slug)}` : '/payments');
     switchView('payments');
@@ -261,7 +265,7 @@ async function loadServiceMarketplace() {
         <div class="product-card-top"><span class="product-category">${escapeServiceHtml(service.category)}</span><span class="product-live"><i></i> ${escapeServiceHtml(service.status)}</span></div>
         <div class="product-icon">${service.logoUrl ? `<img src="${escapeServiceHtml(service.logoUrl)}" alt="${escapeServiceHtml(service.name)} logo">` : escapeServiceHtml(serviceInitial(service.name))}</div>
         <h3>${escapeServiceHtml(service.name)}</h3><p>${escapeServiceHtml(service.description || 'A paid API on Robinhood Chain.')}</p>
-        <div class="product-metrics"><div><span>Price</span><strong>${escapeServiceHtml(service.price)} ${escapeServiceHtml(service.currency)}</strong><small>/ request</small></div><div><span>Paid calls</span><strong>${shortNumber(service.requests)}</strong><small>${escapeServiceHtml(service.currency)}</small></div></div>
+        <div class="product-metrics"><div><span>Price</span><strong>${escapeServiceHtml(service.billingMode === 'metered' ? 'Usage-based' : service.price)} ${escapeServiceHtml(service.currency)}</strong><small>${service.billingMode === 'metered' ? 'actual model cost' : '/ request'}</small></div><div><span>Paid calls</span><strong>${service.billingMode === 'metered' ? '—' : shortNumber(service.requests)}</strong><small>${escapeServiceHtml(service.currency)}</small></div></div>
         <div class="product-card-foot"><span><i></i> Robinhood Chain</span><span class="market-card-requests">View API ↗</span></div>
       </article>`).join('');
   } catch (error) { grid.innerHTML = `<div class="market-empty">${escapeServiceHtml(error.message)}</div>`; }
@@ -288,7 +292,8 @@ async function loadServiceDetail(slug) {
     else detailIcon.textContent = serviceInitial(service.name);
     document.getElementById('detailName').textContent = service.name;
     document.getElementById('detailDescription').textContent = service.description;
-    document.getElementById('detailPrice').textContent = service.price;
+    document.getElementById('detailPrice').textContent = service.billingMode === 'metered' ? 'Usage-based' : service.price;
+    document.getElementById('btnRunService').textContent = service.billingMode === 'metered' ? 'Use with agent wallet' : 'Run API';
     document.getElementById('detailNetwork').textContent = ROBINHOOD_CHAIN_NAME.replace(' Chain', '');
     document.getElementById('detailToken').textContent = service.currency;
     document.getElementById('detailRequests').textContent = Number(service.requests || 0).toLocaleString();
@@ -301,6 +306,13 @@ async function loadServiceDetail(slug) {
     const openapiLink = document.getElementById('detailOpenApiLink');
     openapiLink.hidden = !service.openapiUrl;
     if (service.openapiUrl) openapiLink.href = service.openapiUrl;
+    if (service.billingMode === 'metered') {
+      document.getElementById('detailRequests').textContent = 'Reported by service';
+      document.getElementById('detailRevenue').textContent = 'Reported by service';
+      document.getElementById('detailCurl').textContent = 'Read model rates: ' + service.metered.modelsUrl;
+      document.getElementById('detailAgentCode').textContent = 'Configure the Olanas wallet with:\nPAYMENTS_INFERENCE_URL=' + new URL(service.gatewayUrl).origin + '\nPAYMENTS_INFERENCE_RECEIVER=' + service.payoutAddress + '\n\nEnable USDG spending limits, then use list_ai_models and use_ai_model. The wallet authorizes a maximum; the service charges actual reported model cost. Refund unused escrow with refund_ai_escrow.';
+      return;
+    }
     const method = service.allowedMethods.includes('POST') ? 'POST' : service.allowedMethods[0];
     const body = method === 'GET' ? '' : [
       ' \\',
@@ -322,7 +334,7 @@ async function fetchMyServices() {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Could not load services');
     if (!data.services.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding:32px">No API services yet. Launch your first endpoint.</td></tr>'; return; }
-    tbody.innerHTML = data.services.map(service => `<tr><td><strong>${escapeServiceHtml(service.name)}</strong><div style="font-size:11px;color:var(--text-muted)">${escapeServiceHtml(service.description)}</div></td><td><strong>${escapeServiceHtml(service.price)} ${escapeServiceHtml(service.currency)}</strong></td><td>${Number(service.requests || 0).toLocaleString()}</td><td class="text-success"><strong>${escapeServiceHtml(service.revenue)} ${escapeServiceHtml(service.currency)}</strong></td><td><span class="status-live-pill">${escapeServiceHtml(service.status)}</span></td><td><a href="/services/${encodeURIComponent(service.slug)}" class="btn btn-secondary btn-sm">View ↗</a></td></tr>`).join('');
+    tbody.innerHTML = data.services.map(service => `<tr><td><strong>${escapeServiceHtml(service.name)}</strong><div style="font-size:11px;color:var(--text-muted)">${escapeServiceHtml(service.description)}</div></td><td><strong>${escapeServiceHtml(service.billingMode === 'metered' ? 'Usage-based' : service.price)} ${escapeServiceHtml(service.currency)}</strong></td><td>${Number(service.requests || 0).toLocaleString()}</td><td class="text-success"><strong>${escapeServiceHtml(service.revenue)} ${escapeServiceHtml(service.currency)}</strong></td><td><span class="status-live-pill">${escapeServiceHtml(service.status)}</span></td><td><a href="/services/${encodeURIComponent(service.slug)}" class="btn btn-secondary btn-sm">View ↗</a></td></tr>`).join('');
     [...tbody.querySelectorAll('tr')].forEach((row, index) => {
       const service = data.services[index];
       const cell = row.lastElementChild;
