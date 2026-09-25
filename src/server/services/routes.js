@@ -51,7 +51,9 @@ async function discoveryHandler(req, res, next) {
         resource: service.endpointUrl, type: 'http', x402Version: 2, accepts: [],
         metadata: { name: service.name, description: service.description, methods: service.allowedMethods,
           billingMode: 'metered', metered, input: inputSchema(service),
-          paymentInstructions: 'Request a model-specific HTTP 402 quote from the service. Verify the receiver against the creator-signed payout address.',
+          paymentInstructions: metered.scheme === 'prepaid-balance'
+            ? 'Register an agent API key with a buyer-wallet signature, deposit USDG to the verified receiver, submit the finalized transfer hash, then call the service with the agent key. Verify the receiver against the creator-signed payout address. Refunds are manual.'
+            : 'Request a model-specific HTTP 402 quote from the service. Verify the receiver against the creator-signed payout address.',
           payTo: service.payoutAddress }, lastUpdated: service.updatedAt
       };
       const token = chain.supportedTokens[service.currency];
@@ -317,7 +319,7 @@ gatewayRouter.use('/:slug', async (req, res, next) => {
   try { service = await serviceStore.getBySlug(req.params.slug); } catch (error) { return next(error); }
   if (!service) return res.status(404).json({ error: 'Service not found' });
   if (service.status !== 'live') return res.status(503).json({ error: 'Service is not live' });
-  if (service.billingMode === 'metered') return res.status(409).json({ error: 'Use the independent metered service with an x402 batch-settlement client', metered: meteredDetails(service) });
+  if (service.billingMode === 'metered') return res.status(409).json({ error: 'Use the independent service and its advertised payment scheme', metered: meteredDetails(service) });
   if (!service.allowedMethods.includes(req.method)) return res.status(405).set('Allow', service.allowedMethods.join(', ')).json({ error: 'Method not allowed' });
   return x402({
     price: service.price, token: service.currency, recipient: service.payoutAddress,

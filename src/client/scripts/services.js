@@ -310,6 +310,10 @@ async function loadServiceDetail(slug) {
       document.getElementById('detailRequests').textContent = 'Reported by service';
       document.getElementById('detailRevenue').textContent = 'Reported by service';
       document.getElementById('detailCurl').textContent = 'Read model rates: ' + service.metered.modelsUrl;
+      if (service.metered.scheme === 'prepaid-balance') {
+        document.getElementById('detailAgentCode').textContent = 'Prepaid USDG inference\nService: ' + new URL(service.gatewayUrl).origin + '\nVerified receiver: ' + service.payoutAddress + '\n\nRegister an agent API key with your buyer wallet, top up with USDG, and submit the finalized transaction hash. Call the listed endpoint with Authorization: Bearer <agent API key> and a saved Idempotency-Key. Each call deducts actual Orbio cost. Unused balance refunds are processed manually by the operator. Use the service prepaid SDK; escrow wallet tools do not apply.';
+        return;
+      }
       document.getElementById('detailAgentCode').textContent = 'Configure the Olanas wallet with:\nPAYMENTS_INFERENCE_URL=' + new URL(service.gatewayUrl).origin + '\nPAYMENTS_INFERENCE_RECEIVER=' + service.payoutAddress + '\n\nEnable USDG spending limits, then use list_ai_models and use_ai_model. The wallet authorizes a maximum; the service charges actual reported model cost. Refund unused escrow with refund_ai_escrow.';
       return;
     }

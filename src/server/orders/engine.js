@@ -76,7 +76,7 @@ class OrderEngine {
   async quote(slug, method, version = 1) {
     const service = await this.services.getBySlug(slug);
     if (!service || service.status !== 'live' || service.chainId !== this.chain.chainId) throw fail('Service is unavailable on this network', 400);
-    if (service.billingMode === 'metered') throw fail('Use an x402 batch-settlement client with the listed metered service endpoint; fixed-price orders are unavailable', 409);
+    if (service.billingMode === 'metered') throw fail('Use the payment scheme advertised by the listed metered service; fixed-price orders are unavailable', 409);
     if (!service.allowedMethods.includes(method)) throw fail('Method is not supported', 400);
     const asset = this.chain.supportedTokens[service.currency];
     if (!asset) throw fail('Unsupported payment asset', 400);

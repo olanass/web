@@ -38,7 +38,7 @@ test('creator signs metered mode; discovery routes directly and fixed-price path
     assert.deepEqual(discovery.items[0].accepts, []);
     assert.equal(discovery.items[0].resource, input.endpointUrl);
     assert.equal((await fetch(base + '/x402/' + service.slug, { method: 'POST' })).status, 409);
-    await assert.rejects(new OrderEngine().quote(service.slug, 'POST'), /batch-settlement/);
+    await assert.rejects(new OrderEngine().quote(service.slug, 'POST'), /metered service/);
     assert.throws(() => validateMetered({ ...input, price: '0.01' }, input.endpointUrl), /no fixed price/);
     assert.throws(() => validateMetered(input, 'http://inference.example/api/inference/escrow/chat/completions'), /HTTPS/);
     const bad = await fetch(base + '/api/services', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...input, billingMode: 'anything' }) });
