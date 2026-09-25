@@ -23,7 +23,7 @@ test('agent guide: client commands match installer flags, copy never installs or
   for (const client of ['codex', 'claude', 'claude-code']) {
     f.nodes.get('agentGuideClient').value = client; f.nodes.get('agentGuideClient').events.change();
     await f.nodes.get('btnCopyAgentInstall').events.click();
-    assert.equal(f.copied.at(-1), 'npx --yes github:olanass/web#olanas-payments-mcp install --client ' + client + ' --auto-config --network mainnet --launchpad https://olanas.xyz');
+    assert.equal(f.copied.at(-1), 'npx --yes github:olanass/olanas-payments-mcp install --client ' + client + ' --auto-config --network mainnet --launchpad https://olanas.xyz');
   }
   assert.throws(() => vm.runInContext('agentWalletInstallCommand("invalid; command")', f.context), /supported local AI client/);
 });

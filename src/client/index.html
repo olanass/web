@@ -276,7 +276,7 @@
                 <p>You need Node.js 22 or newer and Git. Run this in your terminal, not in agent chat. Install the selected desktop app or CLI first.</p>
                 <label for="agentGuideClient">Your AI client</label>
                 <select id="agentGuideClient"><option value="codex">Codex (local client / CLI)</option><option value="claude">Claude Desktop</option><option value="claude-code">Claude Code</option></select>
-                <pre><code id="agentGuideInstall">npx --yes github:olanass/web#olanas-payments-mcp install --client codex --auto-config --network mainnet --launchpad https://olanas.xyz</code></pre>
+                <pre><code id="agentGuideInstall">npx --yes github:olanass/olanas-payments-mcp install --client codex --auto-config --network mainnet --launchpad https://olanas.xyz</code></pre>
                 <button type="button" id="btnCopyAgentInstall">Copy install command</button>
                 <p id="agentGuideClientHelp">Have the Codex CLI available for automatic registration. If it is not found, the installer prints a manual MCP configuration.</p>
                 <p>The installer creates or reuses its own encrypted local wallet. It does not import your existing browser wallet, fund the account, or enable spending. Protect the local configuration and owner-password file.</p>

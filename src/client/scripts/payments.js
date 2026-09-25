@@ -426,7 +426,7 @@ function paymentRestorePending() {
 
 function agentWalletInstallCommand(client) {
   if (!['codex', 'claude', 'claude-code'].includes(client)) throw new Error('Choose a supported local AI client');
-  return 'npx --yes github:olanass/web#olanas-payments-mcp install --client ' + client + ' --auto-config --network mainnet --launchpad https://olanas.xyz';
+  return 'npx --yes github:olanass/olanas-payments-mcp install --client ' + client + ' --auto-config --network mainnet --launchpad https://olanas.xyz';
 }
 
 function initAgentWalletGuide() {
