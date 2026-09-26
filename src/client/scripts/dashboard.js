@@ -37,13 +37,13 @@ async function fetchMyLinks() {
         <tr>
           <td>
             <strong>${escapeHtml(p.title)}</strong>
-            <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(p.asset.originalName)} (${escapeHtml(p.asset.formattedSize)})</div>
+            <div class="project-description">${escapeHtml(p.asset.originalName)} (${escapeHtml(p.asset.formattedSize)})</div>
           </td>
-          <td><strong>${escapeHtml(p.price)} ${escapeHtml(p.currency)}</strong></td>
+          <td class="project-value"><strong>${escapeHtml(p.price)} ${escapeHtml(p.currency)}</strong></td>
           <td>${p.viewsCount || 0}</td>
           <td>${p.salesCount || 0}</td>
-          <td class="text-success"><strong>${escapeHtml(p.totalEarned || 0)} ${escapeHtml(p.currency)}</strong></td>
-          <td>${dateStr}</td>
+          <td class="project-value text-success"><strong>${escapeHtml(p.totalEarned || 0)} ${escapeHtml(p.currency)}</strong></td>
+          <td class="project-value">${dateStr}</td>
           <td>
             <a href="${shareUrl}" target="_blank" class="btn btn-secondary btn-sm">View ↗</a>
           </td>

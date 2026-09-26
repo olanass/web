@@ -15,7 +15,7 @@
   <link rel="icon" type="image/png" href="/assets/favicon.png?v=20260923" />
 
   <script src="/scripts/theme.js"></script>
-  <link rel="stylesheet" href="/styles/app.css?v=20260923-listing-design" />
+  <link rel="stylesheet" href="/styles/app.css?v=20260926-projects-design" />
 </head>
 <body>
   <div class="cosmos-background" id="cosmosBackground" aria-hidden="true"></div>
@@ -743,24 +743,25 @@ curl -i -X GET "http://localhost:4020/api/paywalls/PAY_ID/download" \
         
         <div class="studio-header-row">
           <div>
+            <p class="projects-eyebrow">WORKSPACE / PROJECTS</p>
             <h1 class="studio-title">My projects</h1>
             <p class="studio-desc">Your launched APIs and paywalled files in one place.</p>
           </div>
-          <button class="btn btn-primary btn-sm" id="btnCreateNew">＋ Create New Paywall</button>
+          <button type="button" class="btn btn-primary" id="btnLaunchNewService">Launch API</button>
         </div>
 
-        <div class="project-section-head"><div><span>API services</span><small>Metered endpoints earning per request</small></div><button type="button" class="btn btn-primary btn-sm" id="btnLaunchNewService">Launch API</button></div>
+        <div class="project-section-head"><div><h2 id="projects-api-heading">API services</h2><p>Manage your endpoints, pricing and availability.</p></div></div>
         <div class="card table-card service-project-card">
-          <div class="table-responsive">
+          <div class="table-responsive" tabindex="0" role="region" aria-labelledby="projects-api-heading">
             <table class="data-table"><thead><tr><th>Service</th><th>Price</th><th>Requests</th><th>Revenue</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody id="serviceProjectsTableBody"><tr><td colspan="6" class="text-center text-muted" style="padding:32px">Connect your wallet to view API services.</td></tr></tbody>
             </table>
           </div>
         </div>
 
-        <div class="project-section-head file-project-head"><div><span>Digital files</span><small>Protected downloads and content</small></div></div>
+        <div class="project-section-head file-project-head"><div><h2 id="projects-files-heading">Digital files</h2><p>Track your protected downloads and sales.</p></div><button type="button" class="btn btn-secondary" id="btnCreateNew">Create paywall</button></div>
         <div class="card table-card">
-          <div class="table-responsive">
+          <div class="table-responsive" tabindex="0" role="region" aria-labelledby="projects-files-heading">
             <table class="data-table">
               <thead>
                 <tr>

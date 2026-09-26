@@ -1,0 +1,105 @@
+/* Olanas Design System v1.0, pp. 7–13, 22: semantic themes and readable tables. */
+body[data-view='mylinks'] {
+  --ui-bg: #ffffff;
+  --ui-surface: #f5f7f6;
+  --ui-surface-soft: #e8eeea;
+  --ui-ink: #050505;
+  --ui-muted: #59665f;
+  --ui-subtle: #59665f;
+  --ui-line: #dce3df;
+  --ui-line-strong: #77857c;
+  --ui-green: #00823f;
+  --ui-green-hover: #006b34;
+  --ui-green-soft: #e8f8ee;
+  --ui-green-ink: #ffffff;
+  --projects-danger: #b42318;
+  --projects-danger-soft: #fff0ee;
+  --font-mono: 'IBM Plex Mono', monospace;
+  /* Resolve legacy component aliases on this scope, not the root palette. */
+  --text-main: var(--ui-ink);
+  --text-muted: var(--ui-muted);
+  --text-subtle: var(--ui-subtle);
+  --bg-card: var(--ui-surface);
+  --bg-subtle: var(--ui-surface-soft);
+  --border-light: var(--ui-line);
+  background: var(--ui-bg);
+}
+html[data-theme='dark'] body[data-view='mylinks'] {
+  --ui-bg: #050505;
+  --ui-surface: #101412;
+  --ui-surface-soft: #202124;
+  --ui-ink: #ffffff;
+  --ui-muted: #adb8b1;
+  --ui-subtle: #adb8b1;
+  --ui-line: #303b34;
+  --ui-line-strong: #78867d;
+  --ui-green: #00d96b;
+  --ui-green-hover: #00ef77;
+  --ui-green-soft: #102b1c;
+  --ui-green-ink: #050505;
+  --projects-danger: #ffb4ab;
+  --projects-danger-soft: #321816;
+}
+body[data-view='mylinks'] .app-main {
+  max-width: 1296px;
+  padding: 48px 48px 64px;
+  flex: 1 0 auto;
+}
+body[data-view='mylinks'] .app-footer { flex: 0 0 auto; margin-top: 48px; }
+#view-mylinks .studio-container { max-width: 1200px; }
+#view-mylinks .studio-header-row { align-items: center; gap: 24px; margin-bottom: 48px; }
+#view-mylinks .projects-eyebrow { margin-bottom: 16px; color: var(--ui-muted); font: 400 12px/16px var(--font-mono); letter-spacing: .06em; }
+#view-mylinks .studio-title { margin: 0 0 16px; color: var(--ui-ink); font: 700 48px/54px 'Space Grotesk', Inter, sans-serif; letter-spacing: -.04em; }
+#view-mylinks .studio-desc { margin: 0; color: var(--ui-muted); font: 400 16px/24px var(--font-sans); }
+#view-mylinks .project-section-head { align-items: center; gap: 24px; margin: 0 0 16px; }
+#view-mylinks .project-section-head h2 { margin: 0 0 4px; color: var(--ui-ink); font: 600 24px/32px var(--font-sans); letter-spacing: -.02em; }
+#view-mylinks .project-section-head p { margin: 0; color: var(--ui-muted); font: 400 14px/20px var(--font-sans); }
+#view-mylinks .file-project-head { margin-top: 48px; }
+#view-mylinks .table-card { margin: 0; border: 1px solid var(--ui-line); border-radius: 12px; background: var(--ui-surface); box-shadow: none; }
+#view-mylinks .table-responsive { border-radius: inherit; overscroll-behavior-x: contain; }
+#view-mylinks .table-responsive:focus-visible { outline: 2px solid var(--ui-green); outline-offset: -3px; }
+#view-mylinks .data-table { min-width: 880px; font: 400 14px/20px var(--font-sans); }
+#view-mylinks .data-table th { padding: 16px 24px; border-color: var(--ui-line); background: var(--ui-surface); color: var(--ui-muted); font: 400 12px/16px var(--font-mono); letter-spacing: 0; text-transform: none; white-space: nowrap; }
+#view-mylinks .data-table td { padding: 24px; border-color: var(--ui-line); background: var(--ui-bg); color: var(--ui-ink); vertical-align: middle; transition: background-color 180ms; }
+#view-mylinks .data-table tbody tr:hover td { background: var(--ui-surface); }
+#view-mylinks .data-table td:first-child:not([colspan]) { width: 32%; min-width: 240px; }
+#view-mylinks .data-table td[colspan] { height: 144px; padding: 32px !important; text-align: center; color: var(--ui-muted); font: 400 14px/24px var(--font-sans); }
+#view-mylinks .data-table strong { font-weight: 600; }
+#view-mylinks .project-description { max-width: 360px; margin-top: 8px; color: var(--ui-muted); font: 400 12px/20px var(--font-sans); overflow-wrap: anywhere; }
+#view-mylinks .project-value { font-variant-numeric: tabular-nums; white-space: nowrap; }
+#view-mylinks .project-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 164px; }
+#view-mylinks .btn { min-height: 44px; padding: 12px 16px; border-radius: 8px; font: 600 14px/20px var(--font-sans); white-space: nowrap; box-shadow: none; transform: none; transition: background-color 180ms, border-color 180ms; }
+#view-mylinks .btn-primary { border: 1px solid #00d96b; background: #00d96b; color: #050505; }
+#view-mylinks .btn-primary:hover { border-color: #00c460; background: #00c460; color: #050505; }
+#view-mylinks .btn-secondary { border: 1px solid var(--ui-line-strong); background: var(--ui-bg); color: var(--ui-ink); }
+#view-mylinks .btn-secondary:hover { border-color: var(--ui-ink); background: var(--ui-surface-soft); color: var(--ui-ink); }
+#view-mylinks .btn:focus-visible { outline: 2px solid var(--ui-green); outline-offset: 2px; }
+#view-mylinks .btn:disabled { opacity: .5; cursor: not-allowed; }
+#view-mylinks .text-success { color: var(--ui-green); }
+#view-mylinks .text-danger { color: var(--projects-danger); }
+#view-mylinks .btn.text-danger:hover { color: var(--projects-danger); background: var(--projects-danger-soft); border-color: var(--projects-danger); }
+#view-mylinks .data-table td.text-danger { color: var(--projects-danger); }
+#view-mylinks .status-live-pill { padding: 4px 8px; gap: 8px; border: 1px solid var(--ui-line); border-radius: 8px; background: var(--ui-bg); color: var(--ui-green); font: 400 12px/16px var(--font-mono); text-transform: none; white-space: nowrap; }
+#view-mylinks .status-live-pill::before { width: 6px; height: 6px; background: currentColor; }
+#view-mylinks .status-live-pill:not([data-status='live']) { background: var(--ui-surface-soft); color: var(--ui-muted); }
+@media (min-width: 768px) and (max-width: 1199px) {
+  body[data-view='mylinks'] .app-main { padding: 32px 32px 48px; }
+}
+@media (max-width: 767px) {
+  body[data-view='mylinks'] .app-main { padding: 32px 20px 48px; }
+  #view-mylinks .studio-header-row { align-items: flex-start; flex-direction: column; margin-bottom: 32px; }
+  #view-mylinks .studio-title { font-size: 32px; line-height: 40px; }
+  #view-mylinks .project-section-head { align-items: flex-start; flex-wrap: wrap; gap: 16px; }
+  #view-mylinks .project-section-head h2 { font-size: 24px; }
+  #view-mylinks .file-project-head { margin-top: 32px; }
+  #view-mylinks .data-table:has(td[colspan]) { min-width: 0; }
+  #view-mylinks .data-table:has(td[colspan]) thead { display: none; }
+}
+@media (max-width: 920px) {
+  /* The translated mobile menu must not widen the document or receive focus. */
+  body[data-view='mylinks'] .app-header { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  body[data-view='mylinks'] .app-header:not(.mobile-nav-open) :is(.header-center, .header-right) { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #view-mylinks :is(.btn, .data-table td) { transition: none; }
+}
